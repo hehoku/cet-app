@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
 import { atom, useRecoilState } from 'recoil'
 
@@ -13,7 +13,13 @@ function App () {
     default: 0
   })
 
+  const numberOnChainState = atom({
+    key: 'numberOnChainState',
+    default: 0
+  })
+
   const [inputValue, setInputValue] = useRecoilState(inputState)
+  const [numberOnChain, setNumberOnChain] = useRecoilState(numberOnChainState)
 
   const handleChange = e => {
     setInputValue(e.target.value)
@@ -44,12 +50,13 @@ function App () {
 
       const number = await contract.retrieve()
       console.log(number)
+      setNumberOnChain(number.toNumber())
     } catch (error) {
       console.log(error)
     }
   }
 
-  const getNumber = async () => {
+  const getNumber = useCallback(async () => {
     try {
       const { ethereum } = window
       const provider = new ethers.providers.Web3Provider(ethereum)
@@ -61,35 +68,42 @@ function App () {
       )
       const number = await contract.retrieve()
       console.log(number.toNumber())
+      setNumberOnChain(number.toNumber())
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [setNumberOnChain])
 
   useEffect(() => {
     checkIfWalletConnected()
-  }, [])
+    getNumber()
+  }, [getNumber])
 
   return (
-    <div className='flex h-screen items-center justify-center'>
-      <input
-        className='focus:shadow-outline w-1/5 appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none'
-        type='number'
-        value={inputValue}
-        onChange={handleChange}
-      />
-      <button
-        className='ml-4 flex h-10 items-center rounded-lg bg-blue-500 p-2 text-center text-white'
-        onClick={setNumber}
-      >
-        Set Number
-      </button>
-      <button
-        className='ml-4 flex h-10 items-center rounded-lg bg-blue-500 p-2 text-center text-white'
-        onClick={getNumber}
-      >
-        Get Number
-      </button>
+    <div className='flex h-screen w-full flex-col justify-center'>
+      <div className='flex w-full items-center justify-center'>
+        <input
+          className='focus:shadow-outline w-1/5 appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none'
+          type='number'
+          value={inputValue}
+          onChange={handleChange}
+        />
+        <button
+          className='ml-4 flex h-10 items-center rounded-lg bg-blue-500 p-2 text-center text-white'
+          onClick={setNumber}
+        >
+          Set Number
+        </button>
+        <button
+          className='ml-4 flex h-10 items-center rounded-lg bg-blue-500 p-2 text-center text-white'
+          onClick={getNumber}
+        >
+          Get Number
+        </button>
+      </div>
+      <p className='mt-10 text-center text-2xl font-bold'>
+        Number on Chain: {numberOnChain}
+      </p>
     </div>
   )
 }
